@@ -1,0 +1,23 @@
+###1
+GET http://localhost:8080/buku
+
+###1
+PUT http://localhost:8080/buku/3
+Content-Type: application/application/json
+
+{
+    "judul": "ini judulku",
+    "Penulis": "Yoss"
+}
+
+###1
+POST http://localhost:8080/buku
+Content-Type: application/json
+
+{
+    "judul": "minotour",
+    "Penulis": "Yosstakke"
+}
+
+###1
+DELETE http://localhost:8080/buku/3
