@@ -25,8 +25,12 @@ func InitRouter() http.Handler {
 	// Public Routes
 	mux.HandleFunc("/register", authCtrl.Register)
 	mux.HandleFunc("/login", authCtrl.Login)
+	mux.HandleFunc("/logout", authCtrl.Logout)
 
-	// Protected Routes (Wajib JWT)
+	// Endpoint untuk cek sesi aktif saat halaman di-refresh
+	mux.HandleFunc("/me", middlewares.RequireAuth(authCtrl.CekMe))
+
+	// Endpoint buku tetap diproteksi
 	mux.HandleFunc("/buku", middlewares.RequireAuth(bukuCtrl.HandleBuku))
 
 	// Endpoint OAuth Google
@@ -44,6 +48,7 @@ func InitRouter() http.Handler {
 
 	// Endpoint buku diproteksi menggunakan Token Authentication statis
 	mux.HandleFunc("/api/buku", tokenAuthMiddleware.RequireAPIToken(bukuCtrl.HandleBuku))
+
 
 	return middlewares.EnableCORS(middlewares.Logger(mux))
 }
