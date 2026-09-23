@@ -59,14 +59,15 @@ func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Tanam token ke HttpOnly Cookie
+	// Tanam token ke HttpOnly Cookie dengan domain localhost eksplisit
 	http.SetCookie(w, &http.Cookie{
 		Name:     "auth_token",
 		Value:    res.Token,
 		Path:     "/",
-		MaxAge:   86400, // 24 Jam dalam detik
-		HttpOnly: true,  // Mencegah pencurian token lewat skrip JS (Anti XSS)
-		Secure:   false, // Set true jika memakai HTTPS di production
+		Domain:   "localhost", // Tambahkan baris ini
+		MaxAge:   86400,       // 24 Jam
+		HttpOnly: true,
+		Secure:   false,
 		SameSite: http.SameSiteLaxMode,
 	})
 
@@ -81,7 +82,8 @@ func (c *AuthController) Logout(w http.ResponseWriter, r *http.Request) {
 		Name:     "auth_token",
 		Value:    "",
 		Path:     "/",
-		MaxAge:   -1, // Langsung kadaluarsa / terhapus
+		Domain:   "localhost", // Tambahkan baris ini
+		MaxAge:   -1,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	})
@@ -149,6 +151,7 @@ func (c *AuthController) GoogleCallback(w http.ResponseWriter, r *http.Request) 
 		Name:     "auth_token",
 		Value:    jwtToken,
 		Path:     "/",
+		Domain:   "localhost",
 		MaxAge:   86400,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
