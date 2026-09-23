@@ -2,122 +2,9 @@ import { useState, useEffect } from 'react';
 
 const API_URL = 'http://localhost:8080';
 
-// --- KOMPONEN KELOLA TOKEN ---
-function TokenManager() {
-  const [namaToken, setNamaToken] = useState('');
-  const [masaBerlaku, setMasaBerlaku] = useState(30);
-  const [tokenDibuat, setTokenDibuat] = useState(null);
-
-  const handleBuatToken = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await fetch(`${API_URL}/api/token/create`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nama_token: namaToken,
-          masa_berlaku_hari: Number(masaBerlaku),
-        }),
-      });
-
-      const hasil = await res.json();
-      if (res.ok) {
-        setTokenDibuat(hasil.data.token);
-        setNamaToken('');
-      } else {
-        alert(hasil.message || 'Gagal membuat token');
-      }
-    } catch {
-      alert('Terjadi kesalahan jaringan');
-    }
-  };
-
-  const handleRevoke = async () => {
-    if (!tokenDibuat) return;
-    try {
-      const res = await fetch(`${API_URL}/api/token/revoke`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: tokenDibuat }),
-      });
-
-      if (res.ok) {
-        alert('Token berhasil dicabut!');
-        setTokenDibuat(null);
-      }
-    } catch {
-      alert('Gagal mencabut token');
-    }
-  };
-
-  return (
-    <div style={{ background: '#fff', padding: 20, borderRadius: 8, marginTop: 24, border: '1px solid #ddd' }}>
-      <h3>Kelola Akses API (Developer Token)</h3>
-      <p style={{ fontSize: 13, color: '#666' }}>
-        Gunakan token ini untuk menghubungkan script otomasi atau perangkat IoT tanpa perlu login browser.
-      </p>
-
-      <form onSubmit={handleBuatToken} style={{ display: 'flex', gap: 10, marginTop: 12 }}>
-        <input
-          type="text"
-          placeholder="Nama Penggunaan (misal: Sensor / Script Python)"
-          required
-          value={namaToken}
-          onChange={(e) => setNamaToken(e.target.value)}
-          style={{ flex: 2, padding: 8 }}
-        />
-        <select
-          value={masaBerlaku}
-          onChange={(e) => setMasaBerlaku(e.target.value)}
-          style={{ flex: 1, padding: 8 }}
-        >
-          <option value={7}>Aktif 7 Hari</option>
-          <option value={30}>Aktif 30 Hari</option>
-          <option value={0}>Tanpa Batas Waktu</option>
-        </select>
-        <button type="submit" style={{ padding: '8px 16px', background: '#007bff', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
-          Buat Token
-        </button>
-      </form>
-
-      {tokenDibuat && (
-        <div style={{ marginTop: 16, padding: 12, background: '#e8f5e9', border: '1px solid #c8e6c9', borderRadius: 4 }}>
-          <b style={{ color: '#2e7d32' }}>Token Akses Berhasil Dibuat!</b>
-          <p style={{ margin: '6px 0', fontSize: 12, color: '#555' }}>
-            Salin token ini sekarang:
-          </p>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <input
-              type="text"
-              readOnly
-              value={tokenDibuat}
-              style={{ width: '100%', padding: 8, fontFamily: 'monospace', background: '#fff' }}
-            />
-            <button
-              type="button"
-              onClick={() => navigator.clipboard.writeText(tokenDibuat)}
-              style={{ padding: '8px 12px', cursor: 'pointer' }}
-            >
-              Salin
-            </button>
-            <button
-              type="button"
-              onClick={handleRevoke}
-              style={{ padding: '8px 12px', background: '#dc3545', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
-            >
-              Cabut
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// --- KOMPONEN UTAMA (WAJIB export default App) ---
 export default function App() {
-  const [token, setToken] = useState(localStorage.getItem('jwt_token') || '');
-  const [user, setUser] = useState(localStorage.getItem('jwt_user') || '');
+  const [user, setUser] = useState(null); // null = belum login
+  const [loading, setLoading] = useState(true);
 
   const [isRegister, setIsRegister] = useState(false);
   const [usernameInput, setUsernameInput] = useState('');
@@ -128,42 +15,46 @@ export default function App() {
   const [judul, setJudul] = useState('');
   const [penulis, setPenulis] = useState('');
 
+  // 1. Cek sesi login saat halaman pertama kali dibuka lewat Cookie
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tokenUrl = params.get('token');
-    const userUrl = params.get('user');
-
-    if (tokenUrl && userUrl) {
-      localStorage.setItem('jwt_token', tokenUrl);
-      localStorage.setItem('jwt_user', userUrl);
-      setToken(tokenUrl);
-      setUser(userUrl);
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
+    cekSesi();
   }, []);
 
-  useEffect(() => {
-    if (token) {
-      ambilBuku();
+  const cekSesi = async () => {
+    try {
+      const res = await fetch(`${API_URL}/me`, {
+        credentials: 'include', // Otomatis mengirimkan Cookie
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data.data.user);
+        ambilBuku();
+      } else {
+        setUser(null);
+      }
+    } catch {
+      setUser(null);
+    } finally {
+      setLoading(false);
     }
-  }, [token]);
+  };
 
+  // 2. Ambil data buku
   const ambilBuku = async () => {
     try {
       const res = await fetch(`${API_URL}/buku`, {
-        headers: { Authorization: `Bearer ${token}` }
+        credentials: 'include', // Cookie terkirim otomatis, tanpa header Authorization manual!
       });
-      if (res.status === 401) {
-        handleLogout();
-        return;
+      if (res.ok) {
+        const data = await res.json();
+        setBukuList(data.data || []);
       }
-      const data = await res.json();
-      setBukuList(data.data || []);
     } catch {
       alert('Gagal mengambil data buku');
     }
   };
 
+  // 3. Login manual
   const handleAuth = async (e) => {
     e.preventDefault();
     const endpoint = isRegister ? `${API_URL}/register` : `${API_URL}/login`;
@@ -172,7 +63,8 @@ export default function App() {
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: usernameInput, password: passwordInput })
+        credentials: 'include', // Terima Set-Cookie dari server
+        body: JSON.stringify({ username: usernameInput, password: passwordInput }),
       });
       const data = await res.json();
 
@@ -181,27 +73,28 @@ export default function App() {
           alert('Registrasi berhasil! Silakan login.');
           setIsRegister(false);
         } else {
-          localStorage.setItem('jwt_token', data.data.token);
-          localStorage.setItem('jwt_user', data.data.username);
-          setToken(data.data.token);
           setUser(data.data.username);
+          ambilBuku();
         }
       } else {
         alert(data.message || 'Gagal login/register');
       }
     } catch {
-      alert('Terjadi kesalahan koneksi');
+      alert('Terjadi kesalahan jaringan');
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('jwt_token');
-    localStorage.removeItem('jwt_user');
-    setToken('');
-    setUser('');
+  // 4. Logout: Hapus Cookie di Server
+  const handleLogout = async () => {
+    await fetch(`${API_URL}/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    setUser(null);
     setBukuList([]);
   };
 
+  // 5. Simpan Buku (POST / PUT)
   const handleSimpanBuku = async (e) => {
     e.preventDefault();
     const method = bukuId ? 'PUT' : 'POST';
@@ -210,11 +103,9 @@ export default function App() {
     try {
       const res = await fetch(endpoint, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ judul, penulis })
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ judul, penulis }),
       });
 
       if (res.ok) {
@@ -231,12 +122,13 @@ export default function App() {
     }
   };
 
+  // 6. Hapus Buku (DELETE)
   const handleHapus = async (id) => {
     if (!confirm('Hapus buku ini?')) return;
     try {
       const res = await fetch(`${API_URL}/buku?id=${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
+        credentials: 'include',
       });
       if (res.ok) ambilBuku();
     } catch {
@@ -244,10 +136,15 @@ export default function App() {
     }
   };
 
-  if (!token) {
+  if (loading) {
+    return <div style={{ textAlign: 'center', marginTop: 50 }}>Memeriksa sesi login...</div>;
+  }
+
+  // --- TAMPILAN BELUM LOGIN ---
+  if (!user) {
     return (
       <div style={{ maxWidth: 400, margin: '60px auto', padding: 20, fontFamily: 'Arial', border: '1px solid #ccc', borderRadius: 8 }}>
-        <h2>{isRegister ? 'Daftar Akun' : 'Login Sistem'}</h2>
+        <h2>{isRegister ? 'Daftar Akun' : 'Login Sistem (Cookie Auth)'}</h2>
         <form onSubmit={handleAuth}>
           <div style={{ marginBottom: 10 }}>
             <label>Username</label>
@@ -293,12 +190,13 @@ export default function App() {
     );
   }
 
+  // --- TAMPILAN DASHBOARD BUKU ---
   return (
     <div style={{ maxWidth: 700, margin: '40px auto', padding: 20, fontFamily: 'Arial' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #ddd', paddingBottom: 10 }}>
         <h2>Katalog Buku</h2>
         <div>
-          <span>Halo, <b>{user}</b> </span>
+          <span>Login via Cookie: <b>{user}</b></span>
           <button onClick={handleLogout} style={{ marginLeft: 10, padding: '6px 12px', background: '#dc3545', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
             Logout
           </button>
@@ -354,9 +252,9 @@ export default function App() {
           ) : (
             bukuList.map((b) => (
               <tr key={b.id}>
-                <td style={{ padding: 8, border: '1px solid #ddd' }}>${b.id}</td>
-                <td style={{ padding: 8, border: '1px solid #ddd' }}>${b.judul}</td>
-                <td style={{ padding: 8, border: '1px solid #ddd' }}>${b.penulis}</td>
+                <td style={{ padding: 8, border: '1px solid #ddd' }}>{b.id}</td>
+                <td style={{ padding: 8, border: '1px solid #ddd' }}>{b.judul}</td>
+                <td style={{ padding: 8, border: '1px solid #ddd' }}>{b.penulis}</td>
                 <td style={{ padding: 8, border: '1px solid #ddd' }}>
                   <button onClick={() => { setBukuId(b.id); setJudul(b.judul); setPenulis(b.penulis); }} style={{ marginRight: 6, padding: '4px 8px', background: '#ffc107', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Edit</button>
                   <button onClick={() => handleHapus(b.id)} style={{ padding: '4px 8px', background: '#dc3545', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Hapus</button>
@@ -366,9 +264,6 @@ export default function App() {
           )}
         </tbody>
       </table>
-
-      {/* Bagian Token Manager */}
-      <TokenManager />
     </div>
   );
 }
