@@ -21,3 +21,28 @@ Content-Type: application/json
 
 ###1
 DELETE http://localhost:8080/buku/3
+
+###1
+POST http://localhost:8080/api/token/create
+Content-Type: application/json
+
+{
+    "nama_token": "anjay"
+}
+
+###1
+POST http://localhost:8080/api/token/revoke
+Content-Type: application/json
+
+{
+    "token": "23ae9cdca93a2975e5b80cafaed9fb84972ad977be178fd15434f7c1cecb626a"
+}
+
+
+//__________________________________---_____________________---------------________
+
+
+
+### 1. UJI AMBIL DATA BUKU (GET) - Menggunakan X-API-KEY
+GET http://localhost:8080/api/buku
+X-API-KEY: 23ae9cdca93a2975e5b80cafaed9fb84972ad977be178fd15434f7c1cecb626a

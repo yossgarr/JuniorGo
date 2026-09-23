@@ -2,22 +2,132 @@ import { useState, useEffect } from 'react';
 
 const API_URL = 'http://localhost:8080';
 
+// --- KOMPONEN KELOLA TOKEN ---
+function TokenManager() {
+  const [namaToken, setNamaToken] = useState('');
+  const [masaBerlaku, setMasaBerlaku] = useState(30);
+  const [tokenDibuat, setTokenDibuat] = useState(null);
+
+  const handleBuatToken = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`${API_URL}/api/token/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nama_token: namaToken,
+          masa_berlaku_hari: Number(masaBerlaku),
+        }),
+      });
+
+      const hasil = await res.json();
+      if (res.ok) {
+        setTokenDibuat(hasil.data.token);
+        setNamaToken('');
+      } else {
+        alert(hasil.message || 'Gagal membuat token');
+      }
+    } catch {
+      alert('Terjadi kesalahan jaringan');
+    }
+  };
+
+  const handleRevoke = async () => {
+    if (!tokenDibuat) return;
+    try {
+      const res = await fetch(`${API_URL}/api/token/revoke`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: tokenDibuat }),
+      });
+
+      if (res.ok) {
+        alert('Token berhasil dicabut!');
+        setTokenDibuat(null);
+      }
+    } catch {
+      alert('Gagal mencabut token');
+    }
+  };
+
+  return (
+    <div style={{ background: '#fff', padding: 20, borderRadius: 8, marginTop: 24, border: '1px solid #ddd' }}>
+      <h3>Kelola Akses API (Developer Token)</h3>
+      <p style={{ fontSize: 13, color: '#666' }}>
+        Gunakan token ini untuk menghubungkan script otomasi atau perangkat IoT tanpa perlu login browser.
+      </p>
+
+      <form onSubmit={handleBuatToken} style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+        <input
+          type="text"
+          placeholder="Nama Penggunaan (misal: Sensor / Script Python)"
+          required
+          value={namaToken}
+          onChange={(e) => setNamaToken(e.target.value)}
+          style={{ flex: 2, padding: 8 }}
+        />
+        <select
+          value={masaBerlaku}
+          onChange={(e) => setMasaBerlaku(e.target.value)}
+          style={{ flex: 1, padding: 8 }}
+        >
+          <option value={7}>Aktif 7 Hari</option>
+          <option value={30}>Aktif 30 Hari</option>
+          <option value={0}>Tanpa Batas Waktu</option>
+        </select>
+        <button type="submit" style={{ padding: '8px 16px', background: '#007bff', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
+          Buat Token
+        </button>
+      </form>
+
+      {tokenDibuat && (
+        <div style={{ marginTop: 16, padding: 12, background: '#e8f5e9', border: '1px solid #c8e6c9', borderRadius: 4 }}>
+          <b style={{ color: '#2e7d32' }}>Token Akses Berhasil Dibuat!</b>
+          <p style={{ margin: '6px 0', fontSize: 12, color: '#555' }}>
+            Salin token ini sekarang:
+          </p>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <input
+              type="text"
+              readOnly
+              value={tokenDibuat}
+              style={{ width: '100%', padding: 8, fontFamily: 'monospace', background: '#fff' }}
+            />
+            <button
+              type="button"
+              onClick={() => navigator.clipboard.writeText(tokenDibuat)}
+              style={{ padding: '8px 12px', cursor: 'pointer' }}
+            >
+              Salin
+            </button>
+            <button
+              type="button"
+              onClick={handleRevoke}
+              style={{ padding: '8px 12px', background: '#dc3545', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+            >
+              Cabut
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- KOMPONEN UTAMA (WAJIB export default App) ---
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('jwt_token') || '');
   const [user, setUser] = useState(localStorage.getItem('jwt_user') || '');
 
-  // State Form Auth
   const [isRegister, setIsRegister] = useState(false);
   const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
 
-  // State CRUD Buku
   const [bukuList, setBukuList] = useState([]);
   const [bukuId, setBukuId] = useState(null);
   const [judul, setJudul] = useState('');
   const [penulis, setPenulis] = useState('');
 
-  // 1. Tangkap Token dari Google OAuth Redirect URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tokenUrl = params.get('token');
@@ -32,7 +142,6 @@ export default function App() {
     }
   }, []);
 
-  // 2. Muat Daftar Buku jika token tersedia
   useEffect(() => {
     if (token) {
       ambilBuku();
@@ -55,7 +164,6 @@ export default function App() {
     }
   };
 
-  // 3. Handler Login & Register Manual
   const handleAuth = async (e) => {
     e.preventDefault();
     const endpoint = isRegister ? `${API_URL}/register` : `${API_URL}/login`;
@@ -94,7 +202,6 @@ export default function App() {
     setBukuList([]);
   };
 
-  // 4. Handler Simpan (Create / Update) Buku
   const handleSimpanBuku = async (e) => {
     e.preventDefault();
     const method = bukuId ? 'PUT' : 'POST';
@@ -124,7 +231,6 @@ export default function App() {
     }
   };
 
-  // 5. Handler Hapus Buku
   const handleHapus = async (id) => {
     if (!confirm('Hapus buku ini?')) return;
     try {
@@ -138,19 +244,6 @@ export default function App() {
     }
   };
 
-  const mulaiEdit = (b) => {
-    setBukuId(b.id);
-    setJudul(b.judul);
-    setPenulis(b.penulis);
-  };
-
-  const batalEdit = () => {
-    setBukuId(null);
-    setJudul('');
-    setPenulis('');
-  };
-
-  // --- TAMPILAN JIKA BELUM LOGIN ---
   if (!token) {
     return (
       <div style={{ maxWidth: 400, margin: '60px auto', padding: 20, fontFamily: 'Arial', border: '1px solid #ccc', borderRadius: 8 }}>
@@ -163,7 +256,7 @@ export default function App() {
               required
               value={usernameInput}
               onChange={(e) => setUsernameInput(e.target.value)}
-              style={{ width: '100%', padding: 8, marginTop: 4 }}
+              style={{ width: '100%', padding: 8, marginTop: 4, boxSizing: 'border-box' }}
             />
           </div>
           <div style={{ marginBottom: 15 }}>
@@ -173,7 +266,7 @@ export default function App() {
               required
               value={passwordInput}
               onChange={(e) => setPasswordInput(e.target.value)}
-              style={{ width: '100%', padding: 8, marginTop: 4 }}
+              style={{ width: '100%', padding: 8, marginTop: 4, boxSizing: 'border-box' }}
             />
           </div>
           <button type="submit" style={{ width: '100%', padding: 10, background: '#007bff', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
@@ -190,7 +283,6 @@ export default function App() {
 
         <hr style={{ margin: '20px 0' }} />
 
-        {/* Tombol Login Google OAuth */}
         <a
           href={`${API_URL}/auth/google/login`}
           style={{ display: 'block', textAlign: 'center', padding: 10, background: '#4285F4', color: 'white', textDecoration: 'none', borderRadius: 4, fontWeight: 'bold' }}
@@ -201,7 +293,6 @@ export default function App() {
     );
   }
 
-  // --- TAMPILAN SETELAH LOGIN (CRUD BUKU) ---
   return (
     <div style={{ maxWidth: 700, margin: '40px auto', padding: 20, fontFamily: 'Arial' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #ddd', paddingBottom: 10 }}>
@@ -214,7 +305,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* Form Tambah / Edit */}
       <form onSubmit={handleSimpanBuku} style={{ margin: '20px 0', padding: 15, background: '#f8f9fa', borderRadius: 6 }}>
         <h3>{bukuId ? 'Edit Buku' : 'Tambah Buku Baru'}</h3>
         <div style={{ marginBottom: 10 }}>
@@ -224,7 +314,7 @@ export default function App() {
             required
             value={judul}
             onChange={(e) => setJudul(e.target.value)}
-            style={{ width: '100%', padding: 8 }}
+            style={{ width: '100%', padding: 8, boxSizing: 'border-box' }}
           />
         </div>
         <div style={{ marginBottom: 10 }}>
@@ -234,20 +324,19 @@ export default function App() {
             required
             value={penulis}
             onChange={(e) => setPenulis(e.target.value)}
-            style={{ width: '100%', padding: 8 }}
+            style={{ width: '100%', padding: 8, boxSizing: 'border-box' }}
           />
         </div>
         <button type="submit" style={{ padding: '8px 16px', background: '#28a745', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
           {bukuId ? 'Perbarui' : 'Simpan'}
         </button>
         {bukuId && (
-          <button type="button" onClick={batalEdit} style={{ marginLeft: 8, padding: '8px 16px', background: '#6c757d', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
+          <button type="button" onClick={() => { setBukuId(null); setJudul(''); setPenulis(''); }} style={{ marginLeft: 8, padding: '8px 16px', background: '#6c757d', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
             Batal
           </button>
         )}
       </form>
 
-      {/* Tabel Data */}
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr style={{ background: '#eee', textAlign: 'left' }}>
@@ -265,11 +354,11 @@ export default function App() {
           ) : (
             bukuList.map((b) => (
               <tr key={b.id}>
-                <td style={{ padding: 8, border: '1px solid #ddd' }}>{b.id}</td>
-                <td style={{ padding: 8, border: '1px solid #ddd' }}>{b.judul}</td>
-                <td style={{ padding: 8, border: '1px solid #ddd' }}>{b.penulis}</td>
+                <td style={{ padding: 8, border: '1px solid #ddd' }}>${b.id}</td>
+                <td style={{ padding: 8, border: '1px solid #ddd' }}>${b.judul}</td>
+                <td style={{ padding: 8, border: '1px solid #ddd' }}>${b.penulis}</td>
                 <td style={{ padding: 8, border: '1px solid #ddd' }}>
-                  <button onClick={() => mulaiEdit(b)} style={{ marginRight: 6, padding: '4px 8px', background: '#ffc107', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Edit</button>
+                  <button onClick={() => { setBukuId(b.id); setJudul(b.judul); setPenulis(b.penulis); }} style={{ marginRight: 6, padding: '4px 8px', background: '#ffc107', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Edit</button>
                   <button onClick={() => handleHapus(b.id)} style={{ padding: '4px 8px', background: '#dc3545', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Hapus</button>
                 </td>
               </tr>
@@ -277,6 +366,9 @@ export default function App() {
           )}
         </tbody>
       </table>
+
+      {/* Bagian Token Manager */}
+      <TokenManager />
     </div>
   );
 }

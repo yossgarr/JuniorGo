@@ -41,12 +41,34 @@ func InitDatabase() {
 		penulis VARCHAR(255) NOT NULL
 	);
 	CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(100) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL
+		id SERIAL PRIMARY KEY,
+		username VARCHAR(100) UNIQUE NOT NULL,
+		password VARCHAR(255) NOT NULL
 	);`
 	if _, err := db.Exec(migrasi); err != nil {
 		log.Fatalf("Migrasi tabel gagal: %v", err)
 	}
-	
+
+	// 1. Pastikan tabel api_tokens sudah dibuat
+	migrasiTabelToken := `
+	CREATE TABLE IF NOT EXISTS api_tokens (
+		id SERIAL PRIMARY KEY,
+		user_id INT REFERENCES users(id) ON DELETE CASCADE,
+		token VARCHAR(64) UNIQUE NOT NULL,
+		nama_token VARCHAR(100) NOT NULL,
+		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+	);`
+	if _, err := db.Exec(migrasiTabelToken); err != nil {
+		log.Fatalf("Gagal migrasi tabel api_tokens: %v", err)
+	}
+
+	// 2. Tambahkan kolom baru (ALTER TABLE) di sini
+	alterTokenQuery := `
+	ALTER TABLE api_tokens 
+	ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP WITH TIME ZONE,
+	ADD COLUMN IF NOT EXISTS is_revoked BOOLEAN DEFAULT FALSE;`
+
+	if _, err := db.Exec(alterTokenQuery); err != nil {
+		log.Fatalf("Gagal memperbarui kolom api_tokens: %v", err)
+	}
 }

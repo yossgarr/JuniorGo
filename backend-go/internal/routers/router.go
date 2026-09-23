@@ -33,5 +33,17 @@ func InitRouter() http.Handler {
 	mux.HandleFunc("/auth/google/login", authCtrl.GoogleLogin)
 	mux.HandleFunc("/auth/google/callback", authCtrl.GoogleCallback)
 
+	// Inisialisasi token repository & middleware
+	tokenRepo := repo.NewTokenRepository()
+	tokenCtrl := controller.NewTokenController(tokenRepo)
+	tokenAuthMiddleware := middlewares.NewTokenAuthMiddleware(tokenRepo)
+
+	// Endpoint membuat token baru
+	mux.HandleFunc("/api/token/create", tokenCtrl.BuatTokenBaru)
+	mux.HandleFunc("/api/token/revoke", tokenCtrl.CabutToken)
+
+	// Endpoint buku diproteksi menggunakan Token Authentication statis
+	mux.HandleFunc("/api/buku", tokenAuthMiddleware.RequireAPIToken(bukuCtrl.HandleBuku))
+
 	return middlewares.EnableCORS(middlewares.Logger(mux))
 }
