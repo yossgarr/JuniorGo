@@ -30,6 +30,7 @@ func main() {
 
 	// 3. Inisialisasi Database Pool
 	initialize.InitDatabase()
+	initialize.InitRedis()
 	defer global.DB.Close()
 
 	// 4. Inisialisasi Router & Server
