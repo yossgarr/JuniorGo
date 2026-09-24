@@ -1,7 +1,9 @@
 package controller
 
 import (
+	"crypto/md5"
 	"encoding/json"
+	"encoding/hex"
 	"net/http"
 	"strconv"
 
@@ -34,12 +36,34 @@ func (c *BukuController) HandleBuku(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *BukuController) AmbilDaftarBuku(w http.ResponseWriter, r *http.Request) {
-	data, err := c.svc.DapatkanSemua()
+	// 1. Ambil data (yang sudah dioptimasi Redis sebelumnya)
+	bukuList, err := c.svc.DapatkanSemua()
 	if err != nil {
 		response.Gagal(w, http.StatusInternalServerError, "Gagal mengambil data")
 		return
 	}
-	response.Sukses(w, http.StatusOK, "Berhasil memuat daftar buku", data)
+
+	// 2. Buat "sidik jari" (ETag) dari isi data JSON
+	dataBytes, _ := json.Marshal(bukuList)
+	hash := md5.Sum(dataBytes)
+	etag := hex.EncodeToString(hash[:])
+
+	// 3. Pasang Header HTTP Caching
+	// - max-age=30: simpan di browser selama 30 detik
+	// - must-revalidate: setelah 30 detik, wajib konfirmasi ke server apakah data berubah
+	w.Header().Set("Cache-Control", "public, max-age=30, must-revalidate")
+	w.Header().Set("ETag", etag)
+
+	// 4. Validasi ETag dari browser
+	// Jika browser mengirimkan ETag yang sama, berarti data di browser masih valid
+	if r.Header.Get("If-None-Match") == etag {
+		// Balas 304 Not Modified (tanpa body data) -> sangat hemat kuota!
+		w.WriteHeader(http.StatusNotModified)
+		return
+	}
+
+	// 5. Kirim data normal (Status 200) jika data memang baru atau pertama kali dibuka
+	response.Sukses(w, http.StatusOK, "Berhasil memuat daftar buku", bukuList)
 }
 
 func (c *BukuController) TambahBuku(w http.ResponseWriter, r *http.Request) {

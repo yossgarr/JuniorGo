@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 
-const API_URL = 'http://localhost:8080';
+//const API_URL = 'http://localhost:8080';
+const API_URL = '/api';
 
 export default function App() {
   const [user, setUser] = useState(null); // null = belum login
