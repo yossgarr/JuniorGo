@@ -30,8 +30,9 @@ func InitRouter() http.Handler {
 	// Endpoint untuk cek sesi aktif saat halaman di-refresh
 	mux.HandleFunc("/me", middlewares.RequireAuth(authCtrl.CekMe))
 
-	// Endpoint buku tetap diproteksi
+	// Endpoint buku diproteksi cookie/session
 	mux.HandleFunc("/buku", middlewares.RequireAuth(bukuCtrl.HandleBuku))
+	mux.HandleFunc("/buku/pinjam", middlewares.RequireAuth(bukuCtrl.PinjamBuku))
 
 	// Endpoint OAuth Google
 	mux.HandleFunc("/auth/google/login", authCtrl.GoogleLogin)
@@ -42,13 +43,13 @@ func InitRouter() http.Handler {
 	tokenCtrl := controller.NewTokenController(tokenRepo)
 	tokenAuthMiddleware := middlewares.NewTokenAuthMiddleware(tokenRepo)
 
-	// Endpoint membuat token baru
+	// Endpoint membuat & mencabut token
 	mux.HandleFunc("/api/token/create", tokenCtrl.BuatTokenBaru)
 	mux.HandleFunc("/api/token/revoke", tokenCtrl.CabutToken)
 
 	// Endpoint buku diproteksi menggunakan Token Authentication statis
 	mux.HandleFunc("/api/buku", tokenAuthMiddleware.RequireAPIToken(bukuCtrl.HandleBuku))
-
+	mux.HandleFunc("/api/buku/pinjam", tokenAuthMiddleware.RequireAPIToken(bukuCtrl.PinjamBuku))
 
 	return middlewares.EnableCORS(middlewares.Logger(mux))
 }
