@@ -297,7 +297,7 @@ export default function App() {
                 <td style={{ padding: 8, border: '1px solid #ddd', textAlign: 'center' }}>{b.id}</td>
                 <td style={{ padding: 8, border: '1px solid #ddd' }}>{b.judul}</td>
                 <td style={{ padding: 8, border: '1px solid #ddd' }}>{b.penulis}</td>
-                <td style={{ padding: 8, border: '1px solid #ddd', textAlign: 'center', fontWeight: 'bold', color: b.stok > 0 ? 'black' : 'red' }}>
+                <td style={{ padding: 8, border: '1px solid #ddd', textAlign: 'center', fontWeight: 'bold', color: b.stok > 0 ? 'green' : 'red' }}>
                   {b.stok}
                 </td>
                 <td style={{ padding: 8, border: '1px solid #ddd', textAlign: 'center' }}>
@@ -310,7 +310,7 @@ export default function App() {
                       marginRight: 6, 
                       padding: '4px 8px', 
                       background: b.stok > 0 ? '#17a2b8' : '#e9ecef', 
-                      color: b.stok > 0 ? 'white' : '#6c757d',
+                      color: b.stok > 0 ? 'white' : '#6d7d6c',
                       border: 'none', 
                       borderRadius: 4, 
                       cursor: b.stok > 0 ? 'pointer' : 'not-allowed'
