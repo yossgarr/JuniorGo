@@ -59,12 +59,12 @@ func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Tanam token ke HttpOnly Cookie dengan domain localhost eksplisit
+	// Tanam token ke HttpOnly Cookie dengan domain 10.20.110.30 eksplisit
 	http.SetCookie(w, &http.Cookie{
 		Name:     "auth_token",
 		Value:    res.Token,
 		Path:     "/",
-		Domain:   "localhost", // Tambahkan baris ini
+		Domain:   "10.20.110.30", // Tambahkan baris ini
 		MaxAge:   86400,       // 24 Jam
 		HttpOnly: true,
 		Secure:   false,
@@ -82,7 +82,7 @@ func (c *AuthController) Logout(w http.ResponseWriter, r *http.Request) {
 		Name:     "auth_token",
 		Value:    "",
 		Path:     "/",
-		Domain:   "localhost", // Tambahkan baris ini
+		Domain:   "10.20.110.30", // Tambahkan baris ini
 		MaxAge:   -1,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
@@ -151,12 +151,12 @@ func (c *AuthController) GoogleCallback(w http.ResponseWriter, r *http.Request) 
 		Name:     "auth_token",
 		Value:    jwtToken,
 		Path:     "/",
-		Domain:   "localhost",
+		Domain:   "10.20.110.30",
 		MaxAge:   86400,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	})
 
 	// Redirect bersih ke React TANPA mengekspos token di URL lagi!
-	http.Redirect(w, r, "http://localhost:5173", http.StatusSeeOther)
+	http.Redirect(w, r, "http://10.20.110.30:5173", http.StatusSeeOther)
 }
