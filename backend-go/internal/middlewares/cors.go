@@ -4,7 +4,7 @@ import "net/http"
 
 func EnableCORS(next http.Handler) http.Handler {
     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        // Ambil origin dari request yang masuk (bisa localhost, IP lokal, dll)
+        // Ambil origin dari request yang masuk (bisa juniorgo-production.up.railway.app, IP lokal, dll)
         origin := r.Header.Get("Origin")
         if origin != "" {
             w.Header().Set("Access-Control-Allow-Origin", origin)

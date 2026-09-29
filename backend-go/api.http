@@ -1,8 +1,8 @@
 ###1
-GET http://localhost:8080/buku
+GET http://juniorgo-production.up.railway.app:8080/buku
 
 ###1
-PUT http://localhost:8080/buku/3
+PUT http://juniorgo-production.up.railway.app:8080/buku/3
 Content-Type: application/application/json
 
 {
@@ -11,7 +11,7 @@ Content-Type: application/application/json
 }
 
 ###1
-POST http://localhost:8080/buku
+POST http://juniorgo-production.up.railway.app:8080/buku
 Content-Type: application/json
 
 {
@@ -20,10 +20,10 @@ Content-Type: application/json
 }
 
 ###1
-DELETE http://localhost:8080/buku/3
+DELETE http://juniorgo-production.up.railway.app:8080/buku/3
 
 ###1
-POST http://localhost:8080/api/token/create
+POST http://juniorgo-production.up.railway.app:8080/api/token/create
 Content-Type: application/json
 
 {
@@ -31,7 +31,7 @@ Content-Type: application/json
 }
 
 ###1
-POST http://localhost:8080/api/token/revoke
+POST http://juniorgo-production.up.railway.app:8080/api/token/revoke
 Content-Type: application/json
 
 {
@@ -44,5 +44,5 @@ Content-Type: application/json
 
 
 ### 1. UJI AMBIL DATA BUKU (GET) - Menggunakan X-API-KEY
-GET http://localhost:8080/api/buku
+GET http://juniorgo-production.up.railway.app:8080/api/buku
 X-API-KEY: 23ae9cdca93a2975e5b80cafaed9fb84972ad977be178fd15434f7c1cecb626a

@@ -36,7 +36,8 @@
 		// 4. Inisialisasi Router & Server
 		router := routers.InitRouter()
 
-		port := os.Getenv("PORT")
+		port := os.Getenv("
+		PORT")
 		if port == "" {
 			port = "8080"
 		}
@@ -46,6 +47,6 @@
 			Handler: router,
 		}
 
-		fmt.Printf("HTTP Server aktif di port %s (http://localhost:%s/buku)\n", port, port)
+		fmt.Printf("HTTP Server aktif di port %s (http://juniorgo-production.up.railway.app:%s/buku)\n", port, port)
 		log.Fatal(server.ListenAndServe())
 	}
