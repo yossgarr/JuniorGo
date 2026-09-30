@@ -17,11 +17,6 @@ export default function App() {
   const [penulis, setPenulis] = useState('');
   const [stok, setStok] = useState(5); // Default stok untuk buku baru
 
-  // 1. Cek sesi login saat halaman pertama kali dibuka lewat Cookie
-  useEffect(() => {
-    cekSesi();
-  }, []);
-
   const cekSesi = async () => {
     try {
       const res = await fetch(`${API_URL}/me`, {
@@ -55,6 +50,13 @@ export default function App() {
       alert('Gagal mengambil data buku');
     }
   };
+
+  // Cek sesi login saat halaman pertama kali dibuka lewat Cookie
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    cekSesi();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 3. Login / Register
   const handleAuth = async (e) => {
