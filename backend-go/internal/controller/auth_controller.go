@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"os"
 
 	"backend-go/internal/models"
 	"backend-go/internal/service"
@@ -59,15 +60,14 @@ func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Tanam token ke HttpOnly Cookie dengan domain 10.20.110.30 eksplisit
+	// Cookie tanpa Domain eksplisit: otomatis milik host yang diakses browser (domain Vercel via proxy /api)
 	http.SetCookie(w, &http.Cookie{
 		Name:     "auth_token",
 		Value:    res.Token,
 		Path:     "/",
-		Domain:   "10.20.110.30", // Tambahkan baris ini
 		MaxAge:   86400,       // 24 Jam
 		HttpOnly: true,
-		Secure:   false,
+		Secure:   isHTTPS(r),
 		SameSite: http.SameSiteLaxMode,
 	})
 
@@ -82,9 +82,9 @@ func (c *AuthController) Logout(w http.ResponseWriter, r *http.Request) {
 		Name:     "auth_token",
 		Value:    "",
 		Path:     "/",
-		Domain:   "10.20.110.30", // Tambahkan baris ini
 		MaxAge:   -1,
 		HttpOnly: true,
+		Secure:   isHTTPS(r),
 		SameSite: http.SameSiteLaxMode,
 	})
 	response.Sukses(w, http.StatusOK, "Berhasil keluar (Cookie dihapus)", nil)
@@ -151,12 +151,21 @@ func (c *AuthController) GoogleCallback(w http.ResponseWriter, r *http.Request) 
 		Name:     "auth_token",
 		Value:    jwtToken,
 		Path:     "/",
-		Domain:   "10.20.110.30",
 		MaxAge:   86400,
 		HttpOnly: true,
+		Secure:   isHTTPS(r),
 		SameSite: http.SameSiteLaxMode,
 	})
 
 	// Redirect bersih ke React TANPA mengekspos token di URL lagi!
-	http.Redirect(w, r, "http://10.20.110.30:5173", http.StatusSeeOther)
+	frontendURL := os.Getenv("FRONTEND_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:5173"
+	}
+	http.Redirect(w, r, frontendURL, http.StatusSeeOther)
+}
+
+// isHTTPS mendeteksi HTTPS, termasuk di balik proxy (Railway/Vercel).
+func isHTTPS(r *http.Request) bool {
+	return r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https"
 }
