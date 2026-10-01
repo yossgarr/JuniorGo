@@ -37,7 +37,15 @@ func RequireAuth(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
+		// user_id di klaim JWT bertipe float64 (hasil decode JSON)
+		userID, ok := claims["user_id"].(float64)
+		if !ok || userID <= 0 {
+			response.Gagal(w, http.StatusUnauthorized, "Token tidak memuat identitas user, silakan login ulang")
+			return
+		}
+
 		ctx := context.WithValue(r.Context(), "user", claims["username"])
+		ctx = context.WithValue(ctx, "user_id", int(userID))
 		next(w, r.WithContext(ctx))
 	}
 }

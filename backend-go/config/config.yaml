@@ -1,5 +1,5 @@
 app:
-  name: "Service Manajemen Buku"
+  name: "Service Manajemen Uang"
   env: "development"
   version: "1.0.0"
 db:
