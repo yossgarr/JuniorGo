@@ -53,11 +53,12 @@ export default function App() {
       .me()
       .then((data) => {
         setUser(data.user);
-        return muatSemua();
+        // Gagal memuat data tidak boleh dianggap sesi habis
+        muatSemua().catch(tangani);
       })
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
-  }, [muatSemua]);
+  }, [muatSemua, tangani]);
 
   const handleLogin = async (username) => {
     setUser(username);

@@ -5,6 +5,7 @@ import (
 	"log"
 	"backend-go/global"
 	"os"
+	"strings"
 
 	_ "github.com/lib/pq"
 )
@@ -15,7 +16,7 @@ func InitDatabase() {
 		log.Fatal("Variabel DATABASE_URL tidak ditemukan pada environment!")
 	}
 
-	db, err := sql.Open("postgres", dsn)
+	db, err := sql.Open("postgres", denganBinaryParameters(dsn))
 	if err != nil {
 		log.Fatalf("Gagal inisialisasi koneksi database: %v", err)
 	}
@@ -86,4 +87,19 @@ func InitDatabase() {
 	if _, err := db.Exec(alterTokenQuery); err != nil {
 		log.Fatalf("Gagal memperbarui kolom api_tokens: %v", err)
 	}
+}
+
+// denganBinaryParameters menambahkan binary_parameters=yes ke DSN.
+// Neon pooler (PgBouncer mode transaksi) tidak cocok dengan prepared statement
+// bawaan lib/pq: query yang berjalan bersamaan bisa gagal dengan
+// "bind message supplies N parameters, but prepared statement requires M".
+func denganBinaryParameters(dsn string) string {
+	if strings.Contains(dsn, "binary_parameters=") {
+		return dsn
+	}
+	sep := "?"
+	if strings.Contains(dsn, "?") {
+		sep = "&"
+	}
+	return dsn + sep + "binary_parameters=yes"
 }
