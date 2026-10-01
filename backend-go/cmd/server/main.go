@@ -46,6 +46,6 @@
 			Handler: router,
 		}
 
-		fmt.Printf("HTTP Server aktif di port %s (http://localhost:%s/buku)\n", port, port)
+		fmt.Printf("HTTP Server aktif di port %s (http://localhost:%s)\n", port, port)
 		log.Fatal(server.ListenAndServe())
 	}

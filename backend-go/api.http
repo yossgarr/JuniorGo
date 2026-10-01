@@ -1,48 +1,60 @@
-###1
-GET http://localhost:8080/buku
-
-###1
-PUT http://localhost:8080/buku/3
-Content-Type: application/application/json
-
-{
-    "judul": "ini judulku",
-    "Penulis": "Yoss"
-}
-
-###1
-POST http://localhost:8080/buku
+### Register
+POST http://localhost:8080/register
 Content-Type: application/json
 
-{
-    "judul": "minotour",
-    "Penulis": "Yosstakke"
-}
+{ "username": "yosi", "password": "rahasia123" }
 
-###1
-DELETE http://localhost:8080/buku/3
+### Login (cookie auth_token tersimpan otomatis oleh REST Client)
+POST http://localhost:8080/login
+Content-Type: application/json
 
-###1
+{ "username": "yosi", "password": "rahasia123" }
+
+### Tambah barang
+POST http://localhost:8080/barang
+Content-Type: application/json
+
+{ "nama": "Indomie", "harga": 2000 }
+
+### Daftar barang
+GET http://localhost:8080/barang
+
+### Ubah barang
+PUT http://localhost:8080/barang?id=1
+Content-Type: application/json
+
+{ "nama": "Indomie Goreng", "harga": 3000 }
+
+### Hapus barang
+DELETE http://localhost:8080/barang?id=1
+
+### Pemasukan manual
+POST http://localhost:8080/transaksi
+Content-Type: application/json
+
+{ "tipe": "pemasukan", "jumlah": 100000, "keterangan": "Gaji" }
+
+### Pengeluaran dari barang (jumlah = harga x qty, dihitung server)
+POST http://localhost:8080/transaksi
+Content-Type: application/json
+
+{ "tipe": "pengeluaran", "barang_id": 1, "qty": 2 }
+
+### Riwayat (opsional ?tipe=pemasukan|pengeluaran)
+GET http://localhost:8080/transaksi
+
+### Hapus transaksi
+DELETE http://localhost:8080/transaksi?id=1
+
+### Ringkasan saldo
+GET http://localhost:8080/ringkasan
+
+### Buat API token (butuh login)
 POST http://localhost:8080/api/token/create
 Content-Type: application/json
 
-{
-    "nama_token": "anjay"
-}
+{ "nama_token": "skrip-cron", "masa_berlaku_hari": 30 }
 
-###1
-POST http://localhost:8080/api/token/revoke
-Content-Type: application/json
-
-{
-    "token": "23ae9cdca93a2975e5b80cafaed9fb84972ad977be178fd15434f7c1cecb626a"
-}
-
-
-//__________________________________---_____________________---------------________
-
-
-
-### 1. UJI AMBIL DATA BUKU (GET) - Menggunakan X-API-KEY
-GET http://localhost:8080/api/buku
-X-API-KEY: 23ae9cdca93a2975e5b80cafaed9fb84972ad977be178fd15434f7c1cecb626a
+### Pakai API token (ganti dengan token hasil di atas)
+GET http://localhost:8080/api/ringkasan
+X-API-KEY: GANTI_DENGAN_TOKEN

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"backend-go/internal/middlewares"
 	"backend-go/internal/models"
 	"backend-go/internal/repo"
 	"backend-go/pkg/response"
@@ -25,6 +26,12 @@ func (c *TokenController) BuatTokenBaru(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	userID, ok := middlewares.UserID(r)
+	if !ok {
+		response.Gagal(w, http.StatusUnauthorized, "User tidak dikenali")
+		return
+	}
+
 	var req models.BuatTokenRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.NamaToken == "" {
 		response.Gagal(w, http.StatusBadRequest, "Nama token wajib diisi")
@@ -38,7 +45,7 @@ func (c *TokenController) BuatTokenBaru(w http.ResponseWriter, r *http.Request) 
 	}
 
 	tokenBaru := models.APIToken{
-		UserID:    1,
+		UserID:    userID,
 		Token:     randomStr,
 		NamaToken: req.NamaToken,
 		IsRevoked: false,
@@ -64,13 +71,19 @@ func (c *TokenController) CabutToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID, ok := middlewares.UserID(r)
+	if !ok {
+		response.Gagal(w, http.StatusUnauthorized, "User tidak dikenali")
+		return
+	}
+
 	var req models.RevokeTokenRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Token == "" {
 		response.Gagal(w, http.StatusBadRequest, "Parameter token wajib diisi")
 		return
 	}
 
-	if err := c.tokenRepo.CabutToken(req.Token); err != nil {
+	if err := c.tokenRepo.CabutToken(userID, req.Token); err != nil {
 		response.Gagal(w, http.StatusBadRequest, err.Error())
 		return
 	}

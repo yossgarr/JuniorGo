@@ -54,9 +54,9 @@ func (r *TokenRepository) CekValiditasToken(tokenStr string) (int, error) {
 }
 
 // Revoke: Nonaktifkan token secara permanen
-func (r *TokenRepository) CabutToken(tokenStr string) error {
-	query := `UPDATE api_tokens SET is_revoked = TRUE WHERE token = $1`
-	res, err := global.DB.Exec(query, tokenStr)
+func (r *TokenRepository) CabutToken(userID int, tokenStr string) error {
+	query := `UPDATE api_tokens SET is_revoked = TRUE WHERE token = $1 AND user_id = $2`
+	res, err := global.DB.Exec(query, tokenStr, userID)
 	if err != nil {
 		return err
 	}
