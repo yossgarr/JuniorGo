@@ -32,7 +32,7 @@ export default function AuthForm({ onLogin }) {
 
   return (
     <div className="auth-card">
-      <h1>Manage Money By YossTakke</h1>
+      <h1>Manage Money By Yatashimura</h1>
       <p className="muted">{isRegister ? 'Buat akun baru' : 'Masuk untuk mengelola keuanganmu'}</p>
 
       <form onSubmit={submit}>
