@@ -116,7 +116,7 @@ export default function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <h1>Catatan Uang</h1>
+        <h1>Manage Money By YossTakke</h1>
         <div className="user">
           <span>Halo, <b>{user}</b></span>
           <button className="btn small" onClick={handleLogout}>Keluar</button>
